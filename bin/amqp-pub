@@ -1,0 +1,60 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'optparse'
+require "amqp"
+
+Class.new do
+  def opt_parse
+    @option = OptionParser.new do |opts|
+      opts.on "-s", "--server [SERVER]", "AMQP server"
+      opts.on "-t", "--topic [TOPIC]", "publish topic"
+      opts.on "-r", "--routing [ROUTING KEY]", "publish routing key"
+      opts.on "-p", "--payload [PAYLOAD]", "publish payload"
+    end.getopts
+
+    raise StandardError, 'topic required' unless @topic = @option['topic']
+    raise StandardError, 'payload required' unless @payload = @option['payload']
+
+    @server = @option['server'] || '127.0.0.1'
+    @routing = @option['routing'] || ''
+  end
+
+  def run
+    begin
+      opt_parse
+    rescue StandardError => e
+      puts "ERROR: #{e.message}"
+      exit
+    end
+
+    puts "AMQP server: #{@server}"
+    puts "      Topic: #{@topic}"
+    puts "Routing key: #{@routing}"
+    puts "    Payload: #{@payload}"
+
+    on_tcp_connection_failure = Proc.new do |setting|
+      puts "TCP connection failure: #{setting[:host]}"
+      EM.stop
+    end
+
+    connection_settings = {
+      host: @server,
+      on_tcp_connection_failure: on_tcp_connection_failure
+    }
+
+    AMQP.start(connection_settings) do |connection, open_ok|
+      channel    = AMQP::Channel.new(connection)
+      channel.on_error do |ch, channel_close|
+        puts "Channel-level error: #{channel_close.reply_text}, shutting down..."
+        connection.close { EM.stop }
+      end
+
+      exchange = channel.topic(@topic, auto_delete: true)
+
+      exchange.publish(@payload, routing_key: @routing) do
+        connection.close { EM.stop }
+      end
+    end
+  end
+end.new.run
