@@ -1,31 +1,18 @@
 # Amqp::Pub
 
-TODO: Write a gem description
+AMQP topic publish tool
 
 ## Installation
 
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'amqp-pub'
-```
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install amqp-pub
+    $ git clone <this repository>
+    $ cd <repository dir>
+    $ rake build
+    $ gem install pkg/*.pkg
 
 ## Usage
 
-TODO: Write usage instructions here
+    $ amqp-sub -s <AMQP_SERVER> -t <TOPIC> [-r <ROUTING_KEY>] -p <PAYLOAD>
 
-## Contributing
+## Example
 
-1. Fork it ( https://github.com/[my-github-username]/amqp-pub/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+    $ amqp-sub -s `boot2docker ip` -t amq.topic -r tests.pub1 -p 'hello subscribers'
